@@ -1,0 +1,44 @@
+---
+title: "1. Load data and update variable name"
+author: "DMC"
+date: "1/20/2021"
+output: html_document
+---
+
+# Load packages and set file path
+```{r setup, include=FALSE}
+library(readxl)
+library(data.table)
+library(Hmisc)
+library(tidyr)
+library(dplyr)
+
+path_data <- "C:/$ANALYSIS/5. Covidsurvey/data"
+path_intermediate <- "C:/$ANALYSIS/5. Covidsurvey/intermediate"
+
+```
+
+# Load datasets
+```{r}
+# Vietnam dataset
+var_list <- read_excel("C:/$ANALYSIS/5. Covidsurvey/data/Variable_name.xlsx", sheet = "vietnam") %>%
+  filter(keep_drop == "keep")
+
+vietnam <- fread(paste0(path_data,"/Database-COVID19_Consumer-VNUA Vietnam.csv"),
+                  skip = 10, nrows = 158,
+                  select = var_list$col_position,
+                  col.names = var_list$new_varname) %>%
+  mutate(id = paste0("vn",id))
+
+# Cambodia dataset
+var_list <- read_excel("C:/$ANALYSIS/5. Covidsurvey/data/Variable_name.xlsx", sheet = "cambodia") %>%
+  filter(keep_drop == "keep")
+
+cambodia <- fread(paste0(path_data,"/Data base_150 consumers_Impact_of_COVID-19_LDC-Final.csv"),
+                  nrows = 150, select = var_list$col_position,
+                  col.names = var_list$new_varname) %>%
+  mutate(id = paste0("cb",row_number())) %>%
+  select(id, everything())
+
+
+```
