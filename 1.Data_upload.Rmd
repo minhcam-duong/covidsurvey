@@ -69,20 +69,20 @@ Hmisc::describe(cambodia_female)
 # Figure 1 - Vietnam
 
 ```{r}
-response <- c("Strongly\nAgree",
-              "Agree","Neutral","Disagree",
-              "Strongly\nDisagree",
+response <- c("Very\nConcerned",
+              "Concerned","Neutral","Not\nConcerned",
+              "Not at all\nConcerned",
               "Not\nSure")
 
 questions <- c("Pathogen contamination in food",
-               "Poor hygiene in processed or ready-to-eat food",
-               "Poor hygiene in meat & fresh produce",
+               "Poor hygiene in processed\nand ready-to-eat food",
+               "Poor hygiene in meat\nand fresh produce",
                "Hormone in meat",
                "Pesticides in fresh produce",
-               "Chemicals in meat & fresh produce",
-               "Salt in processed or ready-to-eat food",
-               "Sugar in processed or ready-to-eat food",
-               "Fat in processed or ready-to-eat food")
+               "Perservatives and addictives\nin meat & fresh produce",
+               "Salt in processed\nand ready-to-eat food",
+               "Sugar in processed\nand ready-to-eat food",
+               "Fat in processed\nand ready-to-eat food")
 
 concern_vn <- vietnam %>%
   select(fat,sugar,salt, chemicals, pesticides, hormone, 
@@ -126,8 +126,12 @@ fig1 <- ggplot(concern_vn, aes(x=value, y=survey_items)) +
        coord_cartesian(clip = "off") +
        labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
        scale_y_discrete() + scale_x_discrete() +
-       annotate("text", x = c(1,2,3,4,5), y=8.8, label = response, size = 3.1) 
+       annotate("text", x = c(1,2,3,4,5,6), y=10, label = response, size = 2.2) 
+
 fig1
+
+ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 1.svg", plot=fig1)
+
 ```
 
 
