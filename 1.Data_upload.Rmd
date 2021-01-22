@@ -66,3 +66,68 @@ Hmisc::describe(cambodia_female)
 
 ```
 
+# Figure 1 - Vietnam
+
+```{r}
+response <- c("Strongly\nAgree",
+              "Agree","Neutral","Disagree",
+              "Strongly\nDisagree",
+              "Not\nSure")
+
+questions <- c("Pathogen contamination in food",
+               "Poor hygiene in processed or ready-to-eat food",
+               "Poor hygiene in meat & fresh produce",
+               "Hormone in meat",
+               "Pesticides in fresh produce",
+               "Chemicals in meat & fresh produce",
+               "Salt in processed or ready-to-eat food",
+               "Sugar in processed or ready-to-eat food",
+               "Fat in processed or ready-to-eat food")
+
+concern_vn <- vietnam %>%
+  select(fat,sugar,salt, chemicals, pesticides, hormone, 
+         hygienefresh, hygieneprocessed, hygiene_pathogens) %>%
+  gather("var","value") %>%
+  group_by(var) %>%
+  mutate(total=n()) %>%
+  ungroup() %>%
+  group_by(var,value,total) %>%
+  summarise(count=n()) %>%
+  filter(!is.na(value)) %>%
+  ungroup() %>%
+  mutate(prop=round(count*100/total,1),
+         survey_items = case_when(var == "fat" ~ 1,
+                       var == "sugar" ~ 2,
+                       var == "salt" ~ 3,
+                       var == "chemicals" ~ 4,
+                       var == "pesticides" ~ 5,
+                       var == "hormone" ~ 6,
+                       var == "hygienefresh" ~ 7,
+                       var == "hygieneprocessed" ~ 8,
+                       var == "hygiene_pathogens" ~ 9),
+         survey_items = factor(survey_items, levels=c(9,8,7,6,5,4,3,2,1), labels = questions)
+         )
+
+ggplot(concern_vn, aes(x=value, y=survey_items))
+
+
+fig1 <- ggplot(concern_vn, aes(x=value, y=survey_items)) + 
+        geom_hline(yintercept = 1:9, col = "grey80") + 
+        geom_point(aes(size=prop), fill="black") +
+        geom_text(aes(label=prop), size=3, vjust=0, nudge_y=0.2) + 
+        theme_classic() + 
+        theme(axis.ticks = element_blank(),
+              axis.line = element_blank(),
+              axis.title=element_blank(),
+              axis.text.x=element_text(colour="black", size = 9),
+              axis.text.y=element_text(colour="black", size = 9),
+              legend.title=element_text(size=10),
+              plot.margin = unit(c(1.2,1,1,1), "lines")) +
+       coord_cartesian(clip = "off") +
+       labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
+       scale_y_discrete() + scale_x_discrete() +
+       annotate("text", x = c(1,2,3,4,5), y=8.8, label = response, size = 3.1) 
+fig1
+```
+
+
