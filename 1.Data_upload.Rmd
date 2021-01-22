@@ -28,7 +28,14 @@ vietnam <- fread(paste0(path_data,"/Database-COVID19_Consumer-VNUA Vietnam.csv")
                   skip = 10, nrows = 158,
                   select = var_list$col_position,
                   col.names = var_list$new_varname) %>%
-  mutate(id = paste0("vn",id))
+  mutate(id = paste0("vn",id), 
+         age_pa = 2020 - birthyear_pa,
+         age_pacat = case_when(age_pa <= 25 ~ 1,
+                               age_pa > 25 & age_pa <= 35 ~ 2,
+                               age_pa > 35 & age_pa <= 49 ~ 3,
+                               age_pa > 49 ~ 4)) 
+
+vietnam_female <- vietnam %>% filter(gender == 2)
 
 # Cambodia dataset
 var_list <- read_excel("C:/$ANALYSIS/5. Covidsurvey/data/Variable_name.xlsx", sheet = "cambodia") %>%
@@ -38,7 +45,24 @@ cambodia <- fread(paste0(path_data,"/Data base_150 consumers_Impact_of_COVID-19_
                   nrows = 150, select = var_list$col_position,
                   col.names = var_list$new_varname) %>%
   mutate(id = paste0("cb",row_number())) %>%
-  select(id, everything())
+  select(id, everything()) %>%
+  mutate(age_pa = 2020 - birthyear_pa,
+         age_pacat = case_when(age_pa <= 25 ~ 1,
+                               age_pa > 25 & age_pa <= 35 ~ 2,
+                               age_pa > 35 & age_pa <= 49 ~ 3,
+                               age_pa > 49 ~ 4)) 
+cambodia_female <- cambodia %>%  filter(gender == "Female")
 
 
 ```
+
+
+# Table 1B
+
+```{r}
+
+Hmisc::describe(vietnam_female)
+Hmisc::describe(cambodia_female)
+
+```
+
