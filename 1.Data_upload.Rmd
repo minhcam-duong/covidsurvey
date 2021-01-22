@@ -208,3 +208,12 @@ ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 1B.svg", plot=fig1b)
 
 ```
 # Figure 3 - Vietnam
+
+```{r}
+response <- c("Very often","Sometimes","Not at all")
+
+questions <- c("Restrict certain meat",
+               "Restrict certain fruits",
+               "Restrict certain vegetables")
+```
+
