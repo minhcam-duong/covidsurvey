@@ -41,6 +41,9 @@ vietnam_female <- vietnam %>% filter(gender == 2)
 var_list <- read_excel("C:/$ANALYSIS/5. Covidsurvey/data/Variable_name.xlsx", sheet = "cambodia") %>%
   filter(keep_drop == "keep")
 
+concern_var <- c("fat","sugar","salt","chemicals","pesticides","hormone",
+                 "hygienefresh","hygieneprocessed", "hygiene_pathogens")
+
 cambodia <- fread(paste0(path_data,"/Data base_150 consumers_Impact_of_COVID-19_LDC-Final.csv"),
                   nrows = 150, select = var_list$col_position,
                   col.names = var_list$new_varname) %>%
@@ -50,7 +53,12 @@ cambodia <- fread(paste0(path_data,"/Data base_150 consumers_Impact_of_COVID-19_
          age_pacat = case_when(age_pa <= 25 ~ 1,
                                age_pa > 25 & age_pa <= 35 ~ 2,
                                age_pa > 35 & age_pa <= 49 ~ 3,
-                               age_pa > 49 ~ 4)) 
+                               age_pa > 49 ~ 4)) %>%
+  mutate_at(concern_var,
+            funs(recode(.,"Extremely concerned"= 1, "Concerned"= 2, "Neutral"= 3,
+                        "Not concerned"= 4, "Not at all concerned"= 5,.default=NA_real_)))   # The category "Don't know" is converted to missing
+  
+
 cambodia_female <- cambodia %>%  filter(gender == "Female")
 
 
@@ -66,13 +74,12 @@ Hmisc::describe(cambodia_female)
 
 ```
 
-# Figure 1 - Vietnam
+# Figure 1A - Vietnam
 
 ```{r}
-response <- c("Very\nConcerned",
-              "Concerned","Neutral","Not\nConcerned",
-              "Not at all\nConcerned",
-              "Not\nSure")
+response <- c("Very\nconcerned",
+              "Concerned","Neutral","Not quite\nconcerned",
+              "Not at all\nconcerned")
 
 questions <- c("Pathogen contamination in food",
                "Poor hygiene in processed\nand ready-to-eat food",
@@ -106,12 +113,13 @@ concern_vn <- vietnam %>%
                        var == "hygieneprocessed" ~ 8,
                        var == "hygiene_pathogens" ~ 9),
          survey_items = factor(survey_items, levels=c(9,8,7,6,5,4,3,2,1), labels = questions)
-         )
+         ) %>%
+  filter(value != 6) ### DROP those who answers "Don't know"
 
 ggplot(concern_vn, aes(x=value, y=survey_items))
 
 
-fig1 <- ggplot(concern_vn, aes(x=value, y=survey_items)) + 
+fig1a <- ggplot(concern_vn, aes(x=value, y=survey_items)) + 
         geom_hline(yintercept = 1:9, col = "grey80") + 
         geom_point(aes(size=prop), fill="black") +
         geom_text(aes(label=prop), size=3, vjust=0, nudge_y=0.2) + 
@@ -126,12 +134,77 @@ fig1 <- ggplot(concern_vn, aes(x=value, y=survey_items)) +
        coord_cartesian(clip = "off") +
        labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
        scale_y_discrete() + scale_x_discrete() +
-       annotate("text", x = c(1,2,3,4,5,6), y=10, label = response, size = 2.2) 
+       annotate("text", x = c(1,2,3,4,5), y=10, label = response, size = 2.5) 
 
-fig1
+fig1a
 
-ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 1.svg", plot=fig1)
+ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 1A.svg", plot=fig1a)
 
 ```
+# Figure 1B - Cambodia
+```{r}
+
+response <- c("Very\nconcerned",
+              "Concerned","Neutral","Not quite\nconcerned",
+              "Not at all\nconcerned")
+
+questions <- c("Pathogen contamination in food",
+               "Poor hygiene in processed\nand ready-to-eat food",
+               "Poor hygiene in meat\nand fresh produce",
+               "Hormone in meat",
+               "Pesticides in fresh produce",
+               "Perservatives and addictives\nin meat & fresh produce",
+               "Salt in processed\nand ready-to-eat food",
+               "Sugar in processed\nand ready-to-eat food",
+               "Fat in processed\nand ready-to-eat food")
+
+concern_cambodia <- cambodia %>%
+  select(fat,sugar,salt, chemicals, pesticides, hormone, 
+         hygienefresh, hygieneprocessed, hygiene_pathogens) %>%
+  gather("var","value") %>%
+  group_by(var) %>%
+  mutate(total=n()) %>%
+  ungroup() %>%
+  group_by(var,value,total) %>%
+  summarise(count=n()) %>%
+  filter(!is.na(value)) %>%
+  ungroup() %>%
+  mutate(prop=round(count*100/total,1),
+         survey_items = case_when(var == "fat" ~ 1,
+                       var == "sugar" ~ 2,
+                       var == "salt" ~ 3,
+                       var == "chemicals" ~ 4,
+                       var == "pesticides" ~ 5,
+                       var == "hormone" ~ 6,
+                       var == "hygienefresh" ~ 7,
+                       var == "hygieneprocessed" ~ 8,
+                       var == "hygiene_pathogens" ~ 9),
+         survey_items = factor(survey_items, levels=c(9,8,7,6,5,4,3,2,1), labels = questions)
+         ) 
+
+ggplot(concern_cambodia, aes(x=value, y=survey_items))
 
 
+fig1b <- ggplot(concern_cambodia, aes(x=value, y=survey_items)) + 
+        geom_hline(yintercept = 1:9, col = "grey80") + 
+        geom_point(aes(size=prop), fill="black") +
+        geom_text(aes(label=prop), size=3, vjust=0, nudge_y=0.2) + 
+        theme_classic() + 
+        theme(axis.ticks = element_blank(),
+              axis.line = element_blank(),
+              axis.title=element_blank(),
+              axis.text.x=element_text(colour="black", size = 9),
+              axis.text.y=element_text(colour="black", size = 9),
+              legend.title=element_text(size=10),
+              plot.margin = unit(c(1.2,1,1,1), "lines")) +
+       coord_cartesian(clip = "off") +
+       labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
+       scale_y_discrete() + scale_x_discrete() +
+       annotate("text", x = c(1,2,3,4,5), y=10, label = response, size = 2.5) 
+
+fig1b
+
+ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 1B.svg", plot=fig1b)
+
+```
+# Figure 3 - Vietnam
