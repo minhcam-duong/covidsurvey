@@ -47,6 +47,9 @@ restrict_var <- c("restrict_fruits",
                "restrict_meat",
                "restrict_veg")
 
+attitude_var <- c('chemicals_illnesses', 'chemicals_cancer', 'chemicals_internet', 
+                  'chemicals_overuse', 'chemicals_gov')
+
 cambodia <- fread(paste0(path_data,"/Data base_150 consumers_Impact_of_COVID-19_LDC-Final.csv"),
                   nrows = 150, select = var_list$col_position,
                   col.names = var_list$new_varname) %>%
@@ -61,7 +64,9 @@ cambodia <- fread(paste0(path_data,"/Data base_150 consumers_Impact_of_COVID-19_
             funs(recode(.,"Extremely concerned"= 1, "Concerned"= 2, "Neutral"= 3,
                         "Not concerned"= 4, "Not at all concerned"= 5,.default=NA_real_))) %>%  # The category "Don't know" is converted to missing 
  mutate_at(restrict_var,
-           funs(recode(.,"Yes,often" = 1, "Yes, sometimes" = 2, "No, not at all" = 3, .default = NA_real_)))
+           funs(recode(.,"Yes, often" = 1, "Yes, sometimes" = 2, "No, not at all" = 3, .default = NA_real_))) %>%
+ mutate_at(attitude_var,
+           funs(recode(.,"Agree" = 1, "Neutral" = 2, "Disagree" = 3,.default=NA_real_)))
   
 
 cambodia_female <- cambodia %>%  filter(gender == "Female")
@@ -212,14 +217,14 @@ fig1b
 ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 1B.svg", plot=fig1b)
 
 ```
-# Figure 3A - Vietnam
+# Figure 2A - Vietnam
 
 ```{r}
 response <- c("Very often","Sometimes","Not at all")
 
 questions <- c("Restricting meat varieties",
-               "Restricting fruits varieties",
-               "Restrict vegetables varieties")
+               "Restricting vegetables varieties",
+               "Restricting fruits varieties")
 
 restrict_vn <- vietnam %>%
   select(restrict_fruits, restrict_veg, restrict_meat) %>%
@@ -239,7 +244,7 @@ restrict_vn <- vietnam %>%
          ) %>%
   filter(value != 6) ### DROP those who answers "Don't know"
 
-fig3a <- ggplot(restrict_vn, aes(x=value, y=survey_items)) + 
+fig2a <- ggplot(restrict_vn, aes(x=value, y=survey_items)) + 
         geom_hline(yintercept = 1:3, col = "grey80") + 
         geom_point(aes(size=prop), fill="black") +
         geom_text(aes(label=prop), size=3, vjust=0, nudge_y=0.1) + 
@@ -254,6 +259,107 @@ fig3a <- ggplot(restrict_vn, aes(x=value, y=survey_items)) +
        labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
        scale_y_discrete() + scale_x_discrete() +
        annotate("text", x = c(1,2,3), y=3.5, label = response, size = 3) 
+
+fig2a
+
+ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 2A.svg", plot=fig2a)
+
+```
+# Figure 2B - Cambodia
+
+```{r}
+response <- c("Very often","Sometimes","Not at all")
+
+questions <- c("Restricting meat varieties",
+               "Restricting vegetabls varieties",
+               "Restricting fruits varieties")
+
+restrict_cb <- cambodia %>%
+  select(restrict_fruits, restrict_veg, restrict_meat) %>%
+  gather("var","value") %>%
+  group_by(var) %>%
+  mutate(total=n()) %>%
+  ungroup() %>%
+  group_by(var,value,total) %>%
+  summarise(count=n()) %>%
+  filter(!is.na(value)) %>%
+  ungroup() %>%
+  mutate(prop=round(count*100/total,1),
+         survey_items = case_when(var == "restrict_fruits" ~ 1,
+                       var == "restrict_veg" ~ 2,
+                       var == "restrict_meat" ~ 3),
+         survey_items = factor(survey_items, levels=c(3,2,1), labels = questions)
+         ) %>%
+  filter(value != 6) ### DROP those who answers "Don't know"
+
+fig2b <- ggplot(restrict_cb, aes(x=value, y=survey_items)) + 
+        geom_hline(yintercept = 1:3, col = "grey80") + 
+        geom_point(aes(size=prop), fill="black") +
+        geom_text(aes(label=prop), size=3, vjust=0, nudge_y=0.1) + 
+        theme_classic() + 
+        theme(axis.ticks = element_blank(),
+              axis.line = element_blank(),
+              axis.title=element_blank(),
+              axis.text.x=element_text(colour="black", size = 9),
+              axis.text.y=element_text(colour="black", size = 9),
+              legend.title=element_text(size=10)) +
+       coord_cartesian(clip = "off") +
+       labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
+       scale_y_discrete() + scale_x_discrete() +
+       annotate("text", x = c(1,2,3), y=3.5, label = response, size = 3) 
+
+fig2b
+
+ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 2B.svg", plot=fig2b)
+
+```
+# Figure 3A - Vietnam
+
+```{r}
+response <- c("Agree","Neutral","Disagree")
+
+questions <- c("The government manages well\n the use of banned chemicals in food sector",
+                "Food sector overuses\nchemicals  to increase their profit",
+               "Internet & social media are trusted\n sources of food safety information",
+               "Chemicals is primary\n cause of cancer",
+               "Chemicals is the primary cause\nof food-related illnesses")
+
+restrict_vn <- vietnam %>%
+  select(chemicals_illnesses, chemicals_cancer, chemicals_internet, 
+         chemicals_overuse, chemicals_gov) %>%
+  gather("var","value") %>%
+  group_by(var) %>%
+  mutate(total=n()) %>%
+  ungroup() %>%
+  group_by(var,value,total) %>%
+  summarise(count=n()) %>%
+  filter(!is.na(value)) %>%
+  ungroup() %>%
+  mutate(prop=round(count*100/total,1),
+         survey_items = case_when(var == "chemicals_illnesses" ~ 1,
+                       var == "chemicals_cancer" ~ 2,
+                       var == "chemicals_internet" ~ 3,
+                       var == "chemicals_overuse" ~ 4,
+                       var == "chemicals_gov" ~ 5),
+         survey_items = factor(survey_items, levels=c(5,4,3,2,1), labels = questions)
+         ) %>%
+  filter(value != 4) # Drop cases when people say "Not sure"
+
+fig3a <- ggplot(restrict_vn, aes(x=value, y=survey_items)) + 
+        geom_hline(yintercept = 1:5, col = "grey80") + 
+        geom_point(aes(size=prop), fill="black") +
+        geom_text(aes(label=prop), size=3, vjust=0, nudge_y=0.1) + 
+        theme_classic() + 
+        theme(axis.ticks = element_blank(),
+              axis.line = element_blank(),
+              axis.title=element_blank(),
+              axis.text.x=element_text(colour="black", size = 9),
+              axis.text.y=element_text(colour="black", size = 9),
+              legend.title=element_text(size=10)) +
+       coord_cartesian(clip = "off") +
+       labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
+       scale_y_discrete() + scale_x_discrete() +
+       annotate("text", x = c(1,2,3), y=5.5, label = response, size = 3) 
 
 fig3a
 
@@ -263,14 +369,17 @@ ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 3A.svg", plot=fig3a)
 # Figure 3B - Cambodia
 
 ```{r}
-response <- c("Very often","Sometimes","Not at all")
+response <- c("Agree","Neutral","Disagree")
 
-questions <- c("Restricting meat varieties",
-               "Restricting fruits varieties",
-               "Restrict vegetables varieties")
+questions <- c("The government manages well\n the use of banned chemicals in food sector",
+                "Food sector overuses\nchemicals  to increase their profit",
+               "Internet & social media are trusted\n sources of food safety information",
+               "Chemicals is primary\n cause of cancer",
+               "Chemicals is the primary cause\nof food-related illnesses")
 
-restrict_vn <- vietnam %>%
-  select(restrict_fruits, restrict_veg, restrict_meat) %>%
+attitude_cb <- cambodia %>%
+  select(chemicals_illnesses, chemicals_cancer, chemicals_internet, 
+         chemicals_overuse, chemicals_gov) %>%
   gather("var","value") %>%
   group_by(var) %>%
   mutate(total=n()) %>%
@@ -280,15 +389,16 @@ restrict_vn <- vietnam %>%
   filter(!is.na(value)) %>%
   ungroup() %>%
   mutate(prop=round(count*100/total,1),
-         survey_items = case_when(var == "restrict_fruits" ~ 1,
-                       var == "restrict_veg" ~ 2,
-                       var == "restrict_meat" ~ 3),
-         survey_items = factor(survey_items, levels=c(3,2,1), labels = questions)
-         ) %>%
-  filter(value != 6) ### DROP those who answers "Don't know"
+         survey_items = case_when(var == "chemicals_illnesses" ~ 1,
+                       var == "chemicals_cancer" ~ 2,
+                       var == "chemicals_internet" ~ 3,
+                       var == "chemicals_overuse" ~ 4,
+                       var == "chemicals_gov" ~ 5),
+         survey_items = factor(survey_items, levels=c(5,4,3,2,1), labels = questions)
+         ) 
 
-fig3a <- ggplot(restrict_vn, aes(x=value, y=survey_items)) + 
-        geom_hline(yintercept = 1:3, col = "grey80") + 
+fig3b <- ggplot(attitude_cb, aes(x=value, y=survey_items)) + 
+        geom_hline(yintercept = 1:5, col = "grey80") + 
         geom_point(aes(size=prop), fill="black") +
         geom_text(aes(label=prop), size=3, vjust=0, nudge_y=0.1) + 
         theme_classic() + 
@@ -301,10 +411,11 @@ fig3a <- ggplot(restrict_vn, aes(x=value, y=survey_items)) +
        coord_cartesian(clip = "off") +
        labs(size = "Percentage (%) \nof respondents",x = "",y="") + 
        scale_y_discrete() + scale_x_discrete() +
-       annotate("text", x = c(1,2,3), y=3.5, label = response, size = 3) 
+       annotate("text", x = c(1,2,3), y=5.5, label = response, size = 3) 
 
-fig3a
+fig3b
 
-ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 3A.svg", plot=fig3a)
+ggsave(file="C:/$ANALYSIS/5. Covidsurvey/result/Figure 3B.svg", plot=fig3b)
 
 ```
+
